@@ -14,34 +14,15 @@ wss.on('connection', (ws) => {
   clients.add(ws);
   console.log("Client connected");
 
-ws.on('message', (msg) => {
-  const text = msg.toString();
-  console.log("Raw message:", text);
-
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e) {
-    console.warn("Invalid JSON");
-    return;
-  }
-
-  console.log("Received event:", data.event);
-
-  if (data.event === "start_fall") {
-    const response = JSON.stringify({ event: "start_fall" });
-    console.log("Broadcasting:", response);
+  ws.on('message', (msg) => {
+    const text = msg.toString();
 
     for (const client of clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(response);
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(text);
       }
     }
-  }
-});
-
-
-
+  });
 
   ws.on('close', () => {
     console.log("Client disconnected:", id);
@@ -49,11 +30,28 @@ ws.on('message', (msg) => {
   });
 });
 
-
-
+// Start the server on the port Render gives us (via process.env.PORT)
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
 
 
+console.log("Type 'start' and press Enter to trigger falling.");
+
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+
+rl.on('line', (input) => {
+    if (input.trim().toLowerCase() === 'start') {
+        const message = JSON.stringify({ event: "start_fall" });
+        console.log("Sending: " + message);
+
+        for (const client of clients) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+            }
+        }
+    }
