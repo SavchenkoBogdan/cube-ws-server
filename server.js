@@ -14,25 +14,31 @@ wss.on('connection', (ws) => {
   clients.add(ws);
   console.log("Client connected");
 
-  ws.on('message', (msg) => {
-    const text = msg.toString();
+ws.on('message', (msg) => {
+  const text = msg.toString();
+  console.log("Raw message:", text);
 
-    let data;
-    try {
-        data = JSON.parse(text);
-    } catch (e) {
-        console.warn("Invalid JSON");
-        return;
-    }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.warn("Invalid JSON");
+    return;
+  }
 
-     if (data.event === "start_fall") {
-        for (const client of clients) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ event: "start_fall" }));
-            }
-        }
+  console.log("Received event:", data.event);
+
+  if (data.event === "start_fall") {
+    const response = JSON.stringify({ event: "start_fall" });
+    console.log("Broadcasting:", response);
+
+    for (const client of clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(response);
+      }
     }
-  });
+  }
+});
 
 
 
