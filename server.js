@@ -11,11 +11,14 @@ const wss = new WebSocket.Server({ server });
 let clients = new Set();
 
 wss.on('connection', (ws) => {
+  const id = Math.random().toString(36).substring(2);
+  ws.id = id;
   clients.add(ws);
-  console.log("Client connected");
+  console.log("Client connected:", id);
 
   ws.on('message', (msg) => {
     const text = msg.toString();
+    console.log(`[${id}]`, text);
 
     for (const client of clients) {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
@@ -30,28 +33,7 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Start the server on the port Render gives us (via process.env.PORT)
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Server started on port ${PORT}`);
 });
-
-
-console.log("Type 'start' and press Enter to trigger falling.");
-
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-rl.on('line', (input) => {
-    if (input.trim().toLowerCase() === 'start') {
-        const message = JSON.stringify({ event: "start_fall" });
-        console.log("Sending: " + message);
-
-        for (const client of clients) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        }
-    }
