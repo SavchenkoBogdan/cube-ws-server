@@ -11,24 +11,34 @@ const wss = new WebSocket.Server({ server });
 let clients = new Set();
 
 wss.on('connection', (ws) => {
-  const id = Math.random().toString(36).substring(2);
-  ws.id = id;
   clients.add(ws);
-  console.log("Client connected:", id);
+  console.log("Client connected:");
 
   ws.on('message', (msg) => {
     const text = msg.toString();
-    console.log(`[${id}]`, text);
+    console.log(text);
 
-    for (const client of clients) {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(text);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.warn(`Invalid JSON`);
+      return;
+    }
+
+    if (data.event === "start_fall") {
+      const payload = JSON.stringify({ event: "start_fall" });
+      for (const client of clients) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(payload);
+        }
       }
+      console.log(`Broadcasted "start_fall"`);
     }
   });
 
   ws.on('close', () => {
-    console.log("Client disconnected:", id);
+    console.log("Client disconnected");
     clients.delete(ws);
   });
 });
